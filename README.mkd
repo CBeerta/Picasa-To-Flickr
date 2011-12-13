@@ -13,7 +13,7 @@ Copies Public Albumns and their containing Images over to Flickr.
 * Get the Token from Flickr: `./picasa-to-flickr --flickr-api-key=<YOUR KEY> --flickr-api-secret=<YOUR SECRET> --authenticate-frob=<THE FROB>`
 * Write the Token Down!
 
-(Yes, it is actually that horrible)
+(Yes, it is actually that horrible.)
 
 ## Use the App
 
@@ -36,7 +36,8 @@ Now that you have Your FLickr Api Key, Secret and Token, you can use the app to 
 
 # Requires
 
-* PHP 5.3
+* PHP 5.3 CLI
+* Pear HTTP_Request
 * [Cling](https://github.com/CBeerta/Cling) (Added as git submodule)
 
 # Disclaimer
