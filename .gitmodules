@@ -1,0 +1,3 @@
+[submodule "vendor/Cling"]
+	path = vendor/Cling
+	url = git://github.com/CBeerta/Cling.git
