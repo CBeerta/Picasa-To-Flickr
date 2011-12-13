@@ -115,17 +115,17 @@ $app->command(':*',
             //print_r($album);
             print "Album: {$album->title}\n";
             
-            if (!in_array($album->title, array('My Photography', 'Höchst'))) {
+            if (!in_array($album->title, array('My Photography' , 'Höchst'))) {
                 print "\t... Skipping\n";
                 continue;
             }
-
+            
             foreach ($picasa->getPhotos($album->albumid) as $photo) {
             
                 //print_r($photo);
                 print "\tPhoto: {$photo->title}\n";
 
-                $tmp_file = '/tmp/' . $photo->filename;
+                $tmp_file = 'data/' . $photo->filename;
                 
                 if (!file_exists($tmp_file)) {
                     $ch = curl_init();
@@ -145,13 +145,17 @@ $app->command(':*',
                     continue;
                 }
                 
-                print "id: {$id}\n";
-                
                 $meta = $picasa->getPhotoMeta($album->albumid, $photo->photoid);
-                $flickr->setPhotoMeta(null, $id, $meta);
-                        
-                exit;
+                if ($meta) {
+                    print "\t... Setting Metadata\n";
+                    $flickr->setPhotoMeta(null, $id, $meta);
+                }
+
+                print "\t... Adding to Album\n";
+                $flickr->addToAlbum($album->title, $id);
             }
+
+
         }
 
     });

@@ -52,11 +52,12 @@ interface PhotoService
     /**
     * Create a new Album
     * 
-    * @param string $albumName Name of the Album to create
+    * @param string $albumName Name of the Album 
+    * @param int    $photorId  ID of Photo to add
     *
     * @return int 
     **/
-    public function createAlbum($albumName);
+    public function addToAlbum($albumName, $photoId);
     
     /**
     * Get all Photos from an album

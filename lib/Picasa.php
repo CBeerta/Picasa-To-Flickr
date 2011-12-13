@@ -93,11 +93,12 @@ class Picasa implements PhotoService
     /**
     * Create a new Album
     * 
-    * @param string $albumName Name of the Album to create
+    * @param string $albumName Name of the Album 
+    * @param int    $photorId  ID of Photo to add
     *
     * @return int 
     **/
-    public function createAlbum($albumName)
+    public function addToAlbum($albumName, $photoId)
     {
     }
 
@@ -171,6 +172,7 @@ class Picasa implements PhotoService
         
         $meta = (object) array(
             'author' => null,
+            'date_taken' => null,
             'keywords' => array(),
             'title' => null,
             'geo_pos' => null,
@@ -179,12 +181,30 @@ class Picasa implements PhotoService
         try {
             $xml = new SimpleXMLElement($data);
             
+            preg_match(
+                "|Date: (.*?)\<br|i", 
+                strip_tags((string) $xml->summary, '<br>'), 
+                $matches
+            );
+            
+            if (($date_taken = strtotime($matches[1])) !== false) {
+                $meta->date_taken = $date_taken;
+            }
+            
             $meta->author = (string) $xml->media_group->media_credit;
             $meta->title = (string) $xml->media_group->media_title;
-            $meta->geo_pos = (string) $xml->georss_where->gml_Point->gml_pos;
             
-            foreach (explode(',', $xml->media_group->media_keywords) as $kwd) {
-                array_push($meta->keywords, trim($kwd));
+            if (isset($xml->georss_where->gml_Point->gml_pos)) {
+                $meta->geo_pos = 
+                    explode(' ', (string) $xml->georss_where->gml_Point->gml_pos);
+            }
+                
+            if (isset($xml->media_group->media_keywords)) {
+                $keywords = (string) $xml->media_group->media_keywords;
+                foreach (explode(',', $keywords) as $kwd) {
+                    $kwd = str_replace(' ', '-', trim($kwd));
+                    array_push($meta->keywords, $kwd);
+                }
             }
                 
         } catch (Exception $e) {

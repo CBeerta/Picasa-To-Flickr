@@ -54,6 +54,8 @@ class Flickr implements PhotoService
         'io_timeout'	  => 5,
         'token'           => null,
 	);
+	
+	private $_albumList = array();
 
     public function setApiKey($key)
     {
@@ -148,9 +150,17 @@ class Flickr implements PhotoService
 		$http_head = $req->getResponseHeader();
 		$http_body = $req->getResponseBody();
 		
-		// print_r(array($http_body, $http_head, $http_code));
+		try {
+    		$xml = new SimpleXMLElement($http_body);
+    		if ($xml->attributes()->stat == 'fail') {
+    		    throw new Exception($xml->err->attributes()->msg);
+		    }
+		} catch (Exception $e) {
+            echo "ERROR: " . $e->getMessage() . "\n";
+            return false;
+		}
 		
-		return new SimpleXMLElement($http_body);
+		return $xml;
     }
         
     public function queryApi($method, $params = array(), $filename = false)
@@ -180,22 +190,99 @@ class Flickr implements PhotoService
 
     public function setPhotoMeta($albumId, $photoId, $meta)
     {
-        print_r(array($albumId, $photoId, $meta));
+        // print_r(array($albumId, $photoId, $meta));
+        
+        foreach ($meta as $k=>$v) {
+            if ($v === null) {
+                continue;
+            }
+            
+            switch ($k) {
+            case 'keywords':
+                $res = $this->queryApi(
+                    "flickr.photos.setTags", 
+                    array(
+                        'photo_id' => $photoId,
+                        'tags' => implode(' ', $v)
+                    )
+                );
+                break;
+            case 'date_taken':
+                $res = $this->queryApi(
+                    "flickr.photos.setDates", 
+                    array(
+                        'photo_id' => $photoId,
+                        'date_taken' => $v,
+                        'date_posted' => $v,
+                    )
+                );
+                break;
+            case 'geo_pos':
+                $res = $this->queryApi(
+                    "flickr.photos.geo.setLocation", 
+                    array(
+                        'photo_id' => $photoId,
+                        'lat' => $v[0],
+                        'lon' => $v[1],
+                    )
+                );
+                break;
+            default:
+                break;
+            
+            }
+        }
         
         return;
     }
 
-    public function createAlbum($albumName)
+    /**
+    * Create a new Album
+    * 
+    * @param string $albumName Name of the Album 
+    * @param int    $photorId  ID of Photo to add
+    *
+    * @return int 
+    **/
+    public function addToAlbum($albumName, $photoId)
     {
-        /*
-        return $this->queryApi(
-            "flickr.photosets.create", 
-            array(
-                'title' => $albumName,
-            )
-        );
-        */
-        return false;
+        // See if the albumlist has been populated, if not
+        // load all available sets
+        if (count($this->_albumList) == 0) {
+            $res =  $this->queryApi(
+                "flickr.photosets.getList", 
+                array(
+                    'title' => $albumName
+                )
+            );
+        
+            $albumId = null;
+            foreach ($res->photosets->photoset as $set) {
+                $this->_albumList[(string) $set->title] = (object) array(
+                    'description' => (string) $set->description,
+                    'id' => (int) $set->attributes()->id,
+                );
+            }
+        }
+        
+        if (!in_array($albumName, array_keys($this->_albumList))) {
+            $res =  $this->queryApi(
+                "flickr.photosets.create", 
+                array(
+                    'title' => $albumName,
+                    'primary_photo_id' => $coverId,
+                )
+            );
+        } else {
+            $res =  $this->queryApi(
+                "flickr.photosets.addPhoto", 
+                array(
+                    'photoset_id' => $this->_albumList[$albumName]->id,
+                    'photo_id' => $photoId,
+                )
+            );
+        }
+        return;
     }
 
     public function uploadPhoto($filename, $title)
@@ -206,27 +293,26 @@ class Flickr implements PhotoService
             $search = $this->queryApi(
                 "flickr.photos.search", 
                 array(
-                    'text' => $title,
+                    'text' => "\"$title\"",
                     'user_id' => 'me',
                 )
             );
             $total = (int) $search->photos->attributes()->total;
             
-            if ($total == 1) {
-                // found a match, return to update metadata
-                return (int) $search->photos->photo[0]->attributes()->id;
-            } else if ($total > 1) {
-                // more then one found, that isn't good
-                print "Multiple pictrures found for {$title}\n";
-                print_r($search->photos);
-                return false;
+            // Go through all results and find the exact match
+            // return id if one was found.
+            foreach ($search->photos->photo as $k => $v) {
+                $attr = $v->attributes();
+                if (isset($attr->title) && $attr->title == $title) {
+                    return (int) $attr->id;
+                }
             }
         } catch (Exception $e) {
             print $e;
             return false;
         }
         
-        print "Uploading!!\n";
+        print "\t ...Uploading!!\n";
 
         // Upload new photo        
         $upload = $this->queryApi(
@@ -236,6 +322,8 @@ class Flickr implements PhotoService
             ),
             $filename
         );
+        
+        print_r($upload);
         
         if (!$upload) {
             return false;
