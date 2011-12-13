@@ -94,7 +94,7 @@ class Picasa implements PhotoService
     * Create a new Album
     * 
     * @param string $albumName Name of the Album 
-    * @param int    $photorId  ID of Photo to add
+    * @param int    $photoId   ID of Photo to add
     *
     * @return int 
     **/
@@ -195,8 +195,8 @@ class Picasa implements PhotoService
             $meta->title = (string) $xml->media_group->media_title;
             
             if (isset($xml->georss_where->gml_Point->gml_pos)) {
-                $meta->geo_pos = 
-                    explode(' ', (string) $xml->georss_where->gml_Point->gml_pos);
+                $meta->geo_pos
+                    = explode(' ', (string) $xml->georss_where->gml_Point->gml_pos);
             }
                 
             if (isset($xml->media_group->media_keywords)) {

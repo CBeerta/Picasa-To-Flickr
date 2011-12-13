@@ -44,6 +44,9 @@ require_once 'HTTP/Request.php';
 **/
 class Flickr implements PhotoService
 {
+    /**
+    * Flickr "api" configuration
+    **/
     private $_cfg = array(
         'api_key'	      => '',
         'api_secret'	  => '',
@@ -53,35 +56,74 @@ class Flickr implements PhotoService
         'conn_timeout'    => 5,
         'io_timeout'	  => 5,
         'token'           => null,
-	);
-	
-	private $_albumList = array();
+    );
 
+    /**
+    * List with all sets from flickr
+    **/
+    private $_albumList = array();
+
+    /**
+    * Set Flickr Api Key
+    *
+    * @param string $key api key
+    *
+    * @return void
+    **/
     public function setApiKey($key)
     {
         $this->_cfg['api_key'] = $key;    
     }
 
+    /**
+    * Set Flickr Api Secret
+    *
+    * @param string $secret api secret
+    *
+    * @return void
+    **/
     public function setApiSecret($secret)
     {
         $this->_cfg['api_secret'] = $secret;    
     }
 
+    /**
+    * Set Flickr Api Token
+    *
+    * @param string $token api token
+    *
+    * @return void
+    **/
     public function setApiToken($token)
     {
         $this->_cfg['token'] = $token;
     }
 
+    /**
+    * Sign arguments with key
+    *
+    * @param array $args Arguments
+    *
+    * @return string
+    **/
     public function signArgs($args)
     {
         ksort($args);
         $a = '';
-        foreach($args as $k => $v) {
+        foreach ($args as $k => $v) {
             $a .= $k . $v;
         }
         return md5($this->_cfg['api_secret'] . $a);
     }
 
+    /**
+    * Get auth Url for flickr
+    *
+    * @param string $perms permissions to request
+    * @param string $frob  The FROB!
+    *
+    * @return string
+    **/
     function getAuthUrl($perms, $frob='')
     {
         $args = array(
@@ -96,12 +138,22 @@ class Flickr implements PhotoService
         $args['api_sig'] = $this->signArgs($args);
 
         $pairs =  array();
-        foreach($args as $k => $v){
+        foreach ($args as $k => $v) {
             $pairs[] = urlencode($k).'='.urlencode($v);
         }
         return $this->_cfg['auth_endpoint'].implode('&', $pairs);
     }
 
+
+    /**
+    * Call a method on flickr
+    *
+    * @param string $method   method to use
+    * @param array  $params   parameters
+    * @param string $filename filename of file to upload
+    *
+    * @return xml
+    **/
     public function callMethod($method, $params = array(), $filename = false)
     {
         $p = $params;
@@ -110,30 +162,29 @@ class Flickr implements PhotoService
         }
         $p['api_key'] = $this->_cfg['api_key'];
 
-		if ($this->_cfg['api_secret']){
-			$p['api_sig'] = $this->signArgs($p);
-		}
-	    
-	    $endpoint = ($filename == false) 
-	        ? $this->_cfg['endpoint'] 
-	        : $this->_cfg['upload_endpoint'];
-	        
-		$req = new HTTP_Request(
-		    /* $this->_cfg['endpoint'], */
-		    $endpoint,
-		    array('timeout' => $this->_cfg['conn_timeout'])
-	    );
+        if ($this->_cfg['api_secret']) {
+            $p['api_sig'] = $this->signArgs($p);
+        }
+
+        $endpoint = ($filename == false) 
+            ? $this->_cfg['endpoint'] 
+            : $this->_cfg['upload_endpoint'];
+
+        $req = new HTTP_Request(
+            $endpoint,
+            array('timeout' => $this->_cfg['conn_timeout'])
+        );
 
         // FIXME: dunno what this is supposed to do, but it breaks photo uploads
-		// $req->_readTimeout = array($this->_cfg['io_timeout'], 0);
+        // $req->_readTimeout = array($this->_cfg['io_timeout'], 0);
 
-		$req->setMethod(HTTP_REQUEST_METHOD_POST);
+        $req->setMethod(HTTP_REQUEST_METHOD_POST);
 
-	    foreach($p as $k => $v){
-	        $req->addPostData($k, $v);
-	    }
-		
-		if ($filename) {
+        foreach ($p as $k => $v) {
+            $req->addPostData($k, $v);
+        }
+
+        if ($filename) {
             $result = $req->addFile(
                 'photo', 
                 $filename
@@ -142,27 +193,36 @@ class Flickr implements PhotoService
                 echo $result->getMessage();
                 die();
             }
-		}
-		
-		$req->sendRequest();
+        }
 
-		$http_code = $req->getResponseCode();
-		$http_head = $req->getResponseHeader();
-		$http_body = $req->getResponseBody();
-		
-		try {
-    		$xml = new SimpleXMLElement($http_body);
-    		if ($xml->attributes()->stat == 'fail') {
-    		    throw new Exception($xml->err->attributes()->msg);
-		    }
-		} catch (Exception $e) {
-            echo "ERROR: " . $e->getMessage() . "\n";
+        $req->sendRequest();
+
+        $http_code = $req->getResponseCode();
+        $http_head = $req->getResponseHeader();
+        $http_body = $req->getResponseBody();
+
+        try {
+            $xml = new SimpleXMLElement($http_body);
+            if ($xml->attributes()->stat == 'fail') {
+                throw new Exception($xml->err->attributes()->msg);
+            }
+        } catch (Exception $e) {
+            // echo "ERROR: " . $e->getMessage() . "\n";
             return false;
-		}
-		
-		return $xml;
+        }
+
+        return $xml;
     }
         
+    /**
+    * Query the Flickr Api
+    * 
+    * @param string $method   method to use
+    * @param array  $params   parameters
+    * @param string $filename filename of file to upload
+    *
+    * @return xml
+    **/
     public function queryApi($method, $params = array(), $filename = false)
     {
         if ($this->_cfg['token'] === null) {
@@ -176,18 +236,47 @@ class Flickr implements PhotoService
         );
     }
 
+    /**
+    * Return all albums
+    * 
+    * @return object
+    **/
     public function getAlbums()
     {
     }
 
+    /**
+    * Get all Photos from an album
+    * 
+    * @param int $albumId ID of the Album to query
+    *
+    * @return object
+    **/
     public function getPhotos($albumId)
     {
     }
 
+    /**
+    * Get Meta Data for a Photo
+    * 
+    * @param int $albumId ID of the Album 
+    * @param int $photoId ID of the Photo
+    *
+    * @return object
+    **/
     public function getPhotoMeta($albumId, $photoId)
     {
     }
 
+    /**
+    * Set Meta Data for a Photo
+    * 
+    * @param int    $albumId ID of the Album 
+    * @param int    $photoId ID of the Photo
+    * @param object $meta    Meta Data to set
+    *
+    * @return bool
+    **/
     public function setPhotoMeta($albumId, $photoId, $meta)
     {
         // print_r(array($albumId, $photoId, $meta));
@@ -240,7 +329,7 @@ class Flickr implements PhotoService
     * Create a new Album
     * 
     * @param string $albumName Name of the Album 
-    * @param int    $photorId  ID of Photo to add
+    * @param int    $photoId   ID of Photo to add
     *
     * @return int 
     **/
@@ -285,6 +374,14 @@ class Flickr implements PhotoService
         return;
     }
 
+    /**
+    * Upload a Photo
+    * 
+    * @param string $filename Filename with the photo
+    * @param string $title    Title to give the photo
+    *
+    * @return int id of the photo that was created
+    **/
     public function uploadPhoto($filename, $title)
     {
         try
@@ -323,7 +420,7 @@ class Flickr implements PhotoService
             $filename
         );
         
-        print_r($upload);
+        // print_r($upload);
         
         if (!$upload) {
             return false;

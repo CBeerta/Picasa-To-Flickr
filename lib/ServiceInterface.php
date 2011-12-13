@@ -53,7 +53,7 @@ interface PhotoService
     * Create a new Album
     * 
     * @param string $albumName Name of the Album 
-    * @param int    $photorId  ID of Photo to add
+    * @param int    $photoId   ID of Photo to add
     *
     * @return int 
     **/
