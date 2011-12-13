@@ -114,11 +114,14 @@ $app->command(':*',
         
             //print_r($album);
             print "Album: {$album->title}\n";
-            
+
+            /*            
+            // FIXME: There should be a way to limit what galleries to sync
             if (!in_array($album->title, array('My Photography' , 'Höchst'))) {
                 print "\t... Skipping\n";
                 continue;
             }
+            */
             
             foreach ($picasa->getPhotos($album->albumid) as $photo) {
             
@@ -159,8 +162,6 @@ $app->command(':*',
         }
 
     });
-
-
 
 $app->run();
 

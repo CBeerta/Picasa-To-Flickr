@@ -359,9 +359,10 @@ class Flickr implements PhotoService
                 "flickr.photosets.create", 
                 array(
                     'title' => $albumName,
-                    'primary_photo_id' => $coverId,
+                    'primary_photo_id' => $photoId,
                 )
             );
+            $this->_albumList = array();
         } else {
             $res =  $this->queryApi(
                 "flickr.photosets.addPhoto", 

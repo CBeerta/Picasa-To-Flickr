@@ -131,7 +131,16 @@ class Picasa implements PhotoService
             $xml = new SimpleXMLElement($data);
             foreach ($xml->entry as $photo) {
                 $link = (string) $photo->content->attributes()->src[0];
+                
+                // tripple encoded filenames. Why, oh Why?
                 $filename = str_replace("%25", "%", basename($link));
+                $filename = urldecode(urldecode($filename));
+                
+                // Use filename for Title if no title is given in picasa
+                $title = (string) $photo->title;
+                $title = empty($title)
+                    ? $title
+                    : $filename;
     
                 preg_match(
                     '|\/photoid\/([0-9]+)[/\?]|i', 
@@ -144,12 +153,13 @@ class Picasa implements PhotoService
                     'id' => (string) $photo->id,
                     'link' => $link,
                     'photoid' => $matches[1],
-                    'filename' => urldecode(urldecode($filename)),
+                    'filename' => $filename,
                 );
             }
         } catch (Exception $e) {
             throw new Exception("Invalid response from Picasa: {$e}");
         }
+
         return $photos;
     }
 
