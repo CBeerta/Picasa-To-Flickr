@@ -73,7 +73,7 @@ $app->command('flickr-token:',
     {
         $flickr->setApiToken($token);
     })
-    ->help("Flickr Api Frob");
+    ->help("Flickr Token");
 
 $app->command('get-flickr-frob', 
     function() use ($flickr)

@@ -65,6 +65,10 @@ class Picasa implements PhotoService
     **/
     public function getAlbums()
     {
+        if (is_null($this->_userId)) {
+            throw new Exception("No User ID Given.");
+        }
+        
         $data = file_get_contents(
             $this->_baseUrl
             . 'feed/base/'

@@ -1,0 +1,46 @@
+# Copy Photos from Picasa to Flickr
+
+Copies Public Albumns and their containing Images over to Flickr.
+
+# Usage
+
+## Retrieve a Token from Flickr
+
+* Clone Repo, and clone submodules
+* Get a Flickr Api Key
+* Get a `frob` from Flickr: `./picasa-to-flickr --flickr-api-key=<YOUR KEY> --flickr-api-secret=<YOUR SECRET> --get-flickr-frob`
+* Follow the Url and allow accept the Permissions
+* Get the Token from Flickr: `./picasa-to-flickr --flickr-api-key=<YOUR KEY> --flickr-api-secret=<YOUR SECRET> --authenticate-frob=<THE FROB>`
+* Write the Token Down!
+
+(Yes, it is actually that horrible)
+
+## Use the App
+
+Now that you have Your FLickr Api Key, Secret and Token, you can use the app to copy:
+    
+    ./picasa-to-flickr --flickr-api-key=<YOUR KEY> --flickr-api-secret=<YOUR SECRET> --flickr-token=<FLICKR TOKEN> --picasa-user-id=<YOUR PICASA USERID>
+
+
+## Usage
+
+    Usage: picasa-to-flickr.php [OPTION]...
+      -h, --help                      This Help Text.
+          --flickr-api-key=<VALUE>    Flickr Api Key
+          --flickr-api-secret=<VALUE> Flickr Api Secret
+          --flickr-token=<VALUE>      Flickr Token
+          --get-flickr-frob           Request a `frob` from Flickr api for authentication
+          --authenticate-frob=<VALUE> Authenticate against Flickr, and recieve a token.
+          --picasa-user-id=<VALUE>    UserID for Picasa Web Albums
+
+
+# Requires
+
+* PHP 5.3
+* [Cling](https://github.com/CBeerta/Cling) (Added as git submodule)
+
+# Disclaimer
+
+I don't take any responsibility for what this tool does to your Flickr Album. It works for me.
+
+
