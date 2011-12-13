@@ -121,7 +121,7 @@ class Picasa implements PhotoService
             . 'user/' 
             . $this->_userId
             . '/albumid/' . $albumId
-            . '?hl=en_US&imgmax=1600'
+            . '?hl=en_US&imgmax=d'
         );
         $data = preg_replace("/(<\/?)(\w+):([^>]*>)/", "$1$2_$3", $data);
 
