@@ -160,6 +160,7 @@ $app->command(':*',
                 if ($meta) {
                     print "... Setting Metadata";
                     $flickr->setPhotoMeta(null, $id, $meta);
+                    Cache::save($tmp_file . '.meta', $meta);
                 }
 
                 print "... Adding to Album\n";
