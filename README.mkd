@@ -44,4 +44,7 @@ Now that you have Your FLickr Api Key, Secret and Token, you can use the app to 
 
 I don't take any responsibility for what this tool does to your Flickr Album. It works for me.
 
+# TODO
+
+* Check for changed Source, and replace where required.
 

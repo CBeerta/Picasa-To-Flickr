@@ -410,8 +410,6 @@ class Flickr implements PhotoService
             return false;
         }
         
-        print "\t ...Uploading!!\n";
-
         // Upload new photo        
         $upload = $this->queryApi(
             false, 

@@ -37,6 +37,7 @@ require_once 'vendor/Cling/Cling.php';
 require_once 'lib/ServiceInterface.php';
 require_once 'lib/Flickr.php';
 require_once 'lib/Picasa.php';
+require_once 'lib/Cache.php';
 
 $app = new Cling(array('debug' => true));
 
@@ -82,7 +83,7 @@ $app->command('get-flickr-frob',
         
         print "Your Frob is {$frob}\n";
         print "Please Open the following URL in your browser, and allow\n";
-        print $flickr->getAuthUrl('delete', $frob) . "\n";
+        print $flickr->getAuthUrl('write', $frob) . "\n";
         exit;
     })
     ->help("Request a `frob` from Flickr api for authentication");
@@ -110,27 +111,29 @@ $app->command('picasa-user-id:',
 $app->command(':*', 
     function() use ($app, $flickr, $picasa)
     {
-        foreach ($picasa->getAlbums($app->option('picasa-user-id')) as $album) {
+        try {
+            $albums = $picasa->getAlbums($app->option('picasa-user-id'));
+        } catch (Exception $e) {
+            echo $e->getMessage() . "\n";
+            $app->notFound();
+        }
         
-            //print_r($album);
+        foreach ($albums as $album) {
             print "Album: {$album->title}\n";
-
-            /*            
-            // FIXME: There should be a way to limit what galleries to sync
-            if (!in_array($album->title, array('My Photography' , 'Höchst'))) {
-                print "\t... Skipping\n";
-                continue;
+            try {
+                $photos = $picasa->getPhotos($album->albumid);
+            } catch (Exception $e) {
+                die($e->getMessage() . "\n");
             }
-            */
             
-            foreach ($picasa->getPhotos($album->albumid) as $photo) {
+            foreach ($photos as $photo) {
             
-                //print_r($photo);
-                print "\tPhoto: {$photo->title}\n";
+                print "\tPhoto: {$photo->title} ({$photo->filename})";
 
                 $tmp_file = 'data/' . $photo->filename;
                 
                 if (!file_exists($tmp_file)) {
+                    print "... Loading Image";
                     $ch = curl_init();
                     $out = fopen($tmp_file, 'w');
                     curl_setopt($ch, CURLOPT_URL, $photo->link);
@@ -144,26 +147,28 @@ $app->command(':*',
                 $id = $flickr->uploadPhoto($tmp_file, $photo->title);
 
                 if (!is_numeric($id)) {
-                    print "\t... Failed to Upload\n";
+                    print "... Failed to Upload\n";
                     continue;
                 }
                 
                 $meta = $picasa->getPhotoMeta($album->albumid, $photo->photoid);
+                if ($meta && Cache::isCurrent($tmp_file . '.meta', $meta)) {
+                    print "... No Change\n";
+                    continue;                    
+                }
+
                 if ($meta) {
-                    print "\t... Setting Metadata\n";
+                    print "... Setting Metadata";
                     $flickr->setPhotoMeta(null, $id, $meta);
                 }
 
-                print "\t... Adding to Album\n";
+                print "... Adding to Album\n";
                 $flickr->addToAlbum($album->title, $id);
             }
-
-
         }
-
     });
 
+
+
 $app->run();
-
-
 

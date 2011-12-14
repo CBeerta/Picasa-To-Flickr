@@ -66,7 +66,7 @@ class Picasa implements PhotoService
     public function getAlbums()
     {
         if (is_null($this->_userId)) {
-            throw new Exception("No User ID Given.");
+            throw new Exception("PICASA: No User ID Given.");
         }
         
         $data = file_get_contents(
@@ -157,7 +157,7 @@ class Picasa implements PhotoService
                 );
             }
         } catch (Exception $e) {
-            throw new Exception("Invalid response from Picasa: {$e}");
+            throw new Exception("PICASA: Invalid response: {$e}");
         }
 
         return $photos;
@@ -185,11 +185,13 @@ class Picasa implements PhotoService
         $data = preg_replace("/(<\/?)(\w+):([^>]*>)/", "$1$2_$3", $data);
         
         $meta = (object) array(
+            'title' => null,
             'author' => null,
             'date_taken' => null,
+            'date_updated' => null,
             'keywords' => array(),
-            'title' => null,
             'geo_pos' => null,
+            'meta_version' => '0.1',
         );
         
         try {
@@ -204,7 +206,8 @@ class Picasa implements PhotoService
             if (($date_taken = strtotime($matches[1])) !== false) {
                 $meta->date_taken = $date_taken;
             }
-            
+            $meta->date_updated = strtotime((string) $xml->updated);
+
             $meta->author = (string) $xml->media_group->media_credit;
             $meta->title = (string) $xml->media_group->media_title;
             
